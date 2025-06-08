@@ -13,7 +13,8 @@ type GameAction =
   | { type: 'FLEE' }
   | { type: 'RESET_GAME' }
   | { type: 'COMBAT_ACTION'; payload: 'attack' | 'defend' | 'flee' }
-  | { type: 'COMBAT_REWARD'; payload: any };
+  | { type: 'COMBAT_REWARD'; payload: any }
+  | { type: 'SET_MESSAGE'; payload: string };
 
 const initialState: GameState = {
   currentLocation: 0,
@@ -214,6 +215,12 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         enemies: state.enemies.filter(e => e !== state.enemies[state.enemies.length - 1])
       };
 
+    case 'SET_MESSAGE':
+      return {
+        ...state,
+        message: action.payload,
+      };
+
     default:
       return state;
   }
@@ -344,4 +351,4 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       {children}
     </GameContext.Provider>
   );
-}; 
+};   
