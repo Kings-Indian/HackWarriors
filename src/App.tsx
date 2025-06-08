@@ -1,27 +1,22 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { GameProvider } from './context/GameContext';
 import Game from './components/Game';
-import './styles/index.css';
+import HomeScreen from './components/HomeScreen';
+import NotFound from './components/NotFound';
+import './styles/App.css';
 
 function App() {
-  console.log('App component rendering');
-  
   return (
-    <GameProvider>
-      <div className="app">
-        <header>
-          <h1>HackWarriors: The Hygiene Escape</h1>
-          <p>Navigate through San Francisco while avoiding hygiene products!</p>
-        </header>
-        <main>
-          <Game />
-        </main>
-        <footer>
-          <p>Use WASD or Arrow Keys to move around. Press Space to interact with NPCs and items.</p>
-          <p>Battle wild creatures to gain experience and level up. Visit different locations in San Francisco!</p>
-        </footer>
-      </div>
-    </GameProvider>
+    <Router>
+      <GameProvider>
+        <Routes>
+          <Route path="/" element={<HomeScreen />} />
+          <Route path="/game" element={<Game />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </GameProvider>
+    </Router>
   );
 }
 

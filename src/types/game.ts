@@ -34,7 +34,6 @@ export interface Player {
   level: number;
   enemiesDefeated: number;
   experience: number;
-  isDefending: boolean;
 }
 
 export interface Location {
@@ -52,7 +51,6 @@ export interface GameState {
   enemies: Enemy[];
   obstacles: Obstacle[];
   player: Player;
-  message: string;
 }
 
 export const SAN_FRANCISCO_LOCATIONS: Location[] = [

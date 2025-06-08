@@ -1,0 +1,185 @@
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.home-screen {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: 'Press Start 2P', cursive;
+  overflow: hidden;
+}
+
+.title-container {
+  text-align: center;
+  margin-bottom: 4rem;
+  animation: float 6s ease-in-out infinite;
+}
+
+.game-title {
+  font-size: 4rem;
+  margin: 0;
+  color: #fff;
+  text-shadow: 
+    0 0 5px #fff,
+    0 0 10px #fff,
+    0 0 20px #0ff,
+    0 0 30px #0ff,
+    0 0 40px #0ff;
+  letter-spacing: 2px;
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  color: #ffd700;
+  margin-top: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.menu-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.menu-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+  text-align: center;
+}
+
+.menu-option:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.menu-option.selected {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+.option-icon {
+  font-size: 1.5rem;
+}
+
+.option-label {
+  font-size: 1.2rem;
+}
+
+.footer {
+  position: absolute;
+  bottom: 2rem;
+  text-align: center;
+}
+
+.controls-hint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.decorative-elements {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  font-size: 2rem;
+  animation: float 6s ease-in-out infinite;
+}
+
+.bubble-1 {
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.bubble-2 {
+  top: 30%;
+  right: 15%;
+  animation-delay: 1s;
+}
+
+.bubble-3 {
+  bottom: 25%;
+  left: 20%;
+  animation-delay: 2s;
+}
+
+.bubble-4 {
+  bottom: 35%;
+  right: 25%;
+  animation-delay: 3s;
+}
+
+/* Nintendo-style selection effect */
+.menu-option.selected::before {
+  content: '►';
+  position: absolute;
+  left: -2rem;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Add some particle effects */
+.home-screen::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+}
+
+/* Add a subtle scanline effect */
+.home-screen::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  opacity: 0.3;
+} 

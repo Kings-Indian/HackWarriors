@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { GameState, Enemy, Obstacle, SAN_FRANCISCO_LOCATIONS } from '../types/game';
 
-const MAX_ENEMIES = 15;
-
 type GameAction =
   | { type: 'MOVE_PLAYER'; payload: { x: number; y: number } }
   | { type: 'SPAWN_ENEMY'; payload: Enemy }
@@ -15,8 +13,7 @@ type GameAction =
   | { type: 'FLEE' }
   | { type: 'RESET_GAME' }
   | { type: 'COMBAT_ACTION'; payload: 'attack' | 'defend' | 'flee' }
-  | { type: 'COMBAT_REWARD'; payload: any }
-  | { type: 'SET_MESSAGE'; payload: string };
+  | { type: 'COMBAT_REWARD'; payload: any };
 
 const initialState: GameState = {
   currentLocation: 0,
@@ -36,8 +33,10 @@ const initialState: GameState = {
     experience: 0,
     isDefending: false
   },
-  message: ''
+  message: '',
 };
+
+const MAX_ENEMIES = 15;
 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
@@ -54,9 +53,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
 
     case 'SPAWN_ENEMY':
-      if (state.enemies.length >= MAX_ENEMIES) {
-        return state;
-      }
       return {
         ...state,
         enemies: [...state.enemies, action.payload]
@@ -77,16 +73,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       });
 
       if (collidedObstacle) {
-        return {
-          ...state,
-          isInCombat: true,
+          return {
+            ...state,
+            isInCombat: true,
           obstacles: state.obstacles.filter(o => o !== collidedObstacle),
           player: {
             ...state.player,
             health: state.player.health - 10
           }
-        };
-      }
+          };
+        }
 
       const collidedEnemy = state.enemies.find(enemy => {
         const dx = playerPos.x - enemy.position.x;
@@ -132,7 +128,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       const newEnemyHealth = enemy.health - damage;
 
       let message = `You attacked ${enemy.name} for ${damage} damage!`;
-
+      
       if (newEnemyHealth <= 0) {
         message += `\nYou defeated ${enemy.name}!`;
         return {
@@ -156,7 +152,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       const newPlayerHealth = state.player.health - enemyDamage;
 
       message += `\n${enemy.name} counterattacked for ${enemyDamage} damage!`;
-
+      
       return {
         ...state,
         player: {
@@ -169,9 +165,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ),
         isGameOver: newPlayerHealth <= 0,
         message,
-      };
-    }
-
+        };
+      }
+      
     case 'DEFEND': {
       return {
         ...state,
@@ -180,9 +176,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           isDefending: true,
         },
         message: 'You brace yourself and defend! Incoming damage will be reduced.',
-      };
-    }
-
+        };
+      }
+      
     case 'FLEE':
       if (state.enemies.length === 0) return state;
       
@@ -218,12 +214,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         enemies: state.enemies.filter(e => e !== state.enemies[state.enemies.length - 1])
       };
 
-    case 'SET_MESSAGE':
-      return {
-        ...state,
-        message: action.payload
-      };
-
     default:
       return state;
   }
@@ -254,46 +244,43 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!state.isInCombat && !state.isGameOver) {
         console.log('Spawn interval triggered');
         console.log('Current state:', state);
-        console.log('Current enemy count:', state.enemies.length);
         
         const currentLocation = SAN_FRANCISCO_LOCATIONS[state.currentLocation];
         console.log('Current location:', currentLocation);
         
         // Check if we've reached the enemy limit
-        if (state.enemies.length >= MAX_ENEMIES) {
+        if (state.enemies.length < MAX_ENEMIES) {
+          if (Math.random() < 0.7) { // 70% chance to spawn enemy
+            const randomEnemy = currentLocation.enemies[Math.floor(Math.random() * currentLocation.enemies.length)];
+            console.log('Spawning enemy:', randomEnemy);
+            
+            dispatch({
+              type: 'SPAWN_ENEMY',
+              payload: {
+                ...randomEnemy,
+                position: {
+                  x: Math.random() * 800,
+                  y: Math.random() * 600
+                }
+              }
+            });
+          } else { // 30% chance to spawn obstacle
+            const randomObstacle = currentLocation.obstacles[Math.floor(Math.random() * currentLocation.obstacles.length)];
+            console.log('Spawning obstacle:', randomObstacle);
+            
+            dispatch({
+              type: 'SPAWN_OBSTACLE',
+              payload: {
+                ...randomObstacle,
+                position: {
+                  x: Math.random() * 800,
+                  y: Math.random() * 600
+                }
+              }
+            });
+          }
+        } else {
           console.log('Enemy spawn limit reached!');
-          dispatch({ type: 'SET_MESSAGE', payload: 'Enemy spawn limit reached!' });
-          return;
-        }
-        
-        if (Math.random() < 0.7) { // 70% chance to spawn enemy
-          const randomEnemy = currentLocation.enemies[Math.floor(Math.random() * currentLocation.enemies.length)];
-          console.log('Spawning enemy:', randomEnemy);
-          
-          dispatch({
-            type: 'SPAWN_ENEMY',
-            payload: {
-              ...randomEnemy,
-              position: {
-                x: Math.random() * 800,
-                y: Math.random() * 600
-              }
-            }
-          });
-        } else { // 30% chance to spawn obstacle
-          const randomObstacle = currentLocation.obstacles[Math.floor(Math.random() * currentLocation.obstacles.length)];
-          console.log('Spawning obstacle:', randomObstacle);
-          
-          dispatch({
-            type: 'SPAWN_OBSTACLE',
-            payload: {
-              ...randomObstacle,
-              position: {
-                x: Math.random() * 800,
-                y: Math.random() * 600
-              }
-            }
-          });
         }
       }
     }, 2000);
