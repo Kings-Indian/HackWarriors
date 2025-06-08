@@ -1,39 +1,42 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { GameState, Player, Obstacle, Enemy, SAN_FRANCISCO_LOCATIONS } from '../types/game';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import { GameState, Enemy, Obstacle, SAN_FRANCISCO_LOCATIONS } from '../types/game';
+
+const MAX_ENEMIES = 15;
 
 type GameAction =
   | { type: 'MOVE_PLAYER'; payload: { x: number; y: number } }
-  | { type: 'SPAWN_OBSTACLE' }
-  | { type: 'SPAWN_ENEMY' }
+  | { type: 'SPAWN_ENEMY'; payload: Enemy }
+  | { type: 'SPAWN_OBSTACLE'; payload: Obstacle }
   | { type: 'CHECK_COLLISION' }
-  | { type: 'INCREMENT_SCORE' }
-  | { type: 'GAME_OVER' }
-  | { type: 'RESET_GAME' }
   | { type: 'START_COMBAT'; payload: Enemy }
   | { type: 'END_COMBAT' }
   | { type: 'ATTACK_ENEMY' }
   | { type: 'DEFEND' }
-  | { type: 'RUN_FROM_COMBAT' }
-  | { type: 'CHANGE_LOCATION' };
+  | { type: 'FLEE' }
+  | { type: 'RESET_GAME' }
+  | { type: 'COMBAT_ACTION'; payload: 'attack' | 'defend' | 'flee' }
+  | { type: 'COMBAT_REWARD'; payload: any }
+  | { type: 'SET_MESSAGE'; payload: string };
 
-const initialGameState: GameState = {
+const initialState: GameState = {
+  currentLocation: 0,
+  isInCombat: false,
+  isGameOver: false,
+  enemies: [],
+  obstacles: [],
   player: {
     position: { x: 400, y: 300 },
-    type: 'player',
     health: 100,
     attack: 10,
     defense: 5,
     speed: 5,
+    score: 0,
+    level: 1,
+    enemiesDefeated: 0,
     experience: 0,
-    enemiesDefeated: 0
+    isDefending: false
   },
-  obstacles: [],
-  score: 0,
-  level: 1,
-  isGameOver: false,
-  isInCombat: false,
-  currentEnemy: null,
-  currentLocation: 'fishermans-wharf'
+  message: ''
 };
 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -50,32 +53,19 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         }
       };
 
-    case 'SPAWN_OBSTACLE':
-      const currentLocation = SAN_FRANCISCO_LOCATIONS.find(loc => loc.name.toLowerCase().replace(' ', '-') === state.currentLocation);
-      if (!currentLocation) return state;
-      
-      const randomObstacle = currentLocation.obstacles[Math.floor(Math.random() * currentLocation.obstacles.length)];
-      const obstaclePosition = {
-        x: Math.random() * 700 + 50,
-        y: Math.random() * 500 + 50
-      };
+    case 'SPAWN_ENEMY':
+      if (state.enemies.length >= MAX_ENEMIES) {
+        return state;
+      }
       return {
         ...state,
-        obstacles: [...state.obstacles, { ...randomObstacle, position: obstaclePosition }]
+        enemies: [...state.enemies, action.payload]
       };
 
-    case 'SPAWN_ENEMY':
-      const location = SAN_FRANCISCO_LOCATIONS.find(loc => loc.name.toLowerCase().replace(' ', '-') === state.currentLocation);
-      if (!location) return state;
-      
-      const randomEnemy = location.enemies[Math.floor(Math.random() * location.enemies.length)];
-      const enemyPosition = {
-        x: Math.random() * 700 + 50,
-        y: Math.random() * 500 + 50
-      };
+    case 'SPAWN_OBSTACLE':
       return {
         ...state,
-        obstacles: [...state.obstacles, { ...randomEnemy, position: enemyPosition, type: 'enemy' }]
+        obstacles: [...state.obstacles, action.payload]
       };
 
     case 'CHECK_COLLISION':
@@ -83,181 +73,155 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       const collidedObstacle = state.obstacles.find(obstacle => {
         const dx = playerPos.x - obstacle.position.x;
         const dy = playerPos.y - obstacle.position.y;
-        return Math.sqrt(dx * dx + dy * dy) < 30;
+        return Math.sqrt(dx * dx + dy * dy) < 50;
       });
 
       if (collidedObstacle) {
-        if (collidedObstacle.type === 'enemy') {
-          return {
-            ...state,
-            isInCombat: true,
-            currentEnemy: collidedObstacle as Enemy,
-            obstacles: state.obstacles.filter(o => o !== collidedObstacle)
-          };
-        }
         return {
           ...state,
-          isGameOver: true
+          isInCombat: true,
+          obstacles: state.obstacles.filter(o => o !== collidedObstacle),
+          player: {
+            ...state.player,
+            health: state.player.health - 10
+          }
         };
       }
+
+      const collidedEnemy = state.enemies.find(enemy => {
+        const dx = playerPos.x - enemy.position.x;
+        const dy = playerPos.y - enemy.position.y;
+        return Math.sqrt(dx * dx + dy * dy) < 50;
+      });
+
+      if (collidedEnemy) {
+        return {
+          ...state,
+          isInCombat: true,
+          enemies: state.enemies.filter(e => e !== collidedEnemy),
+          player: {
+            ...state.player,
+            health: state.player.health - 10
+          }
+        };
+      }
+
       return state;
 
-    case 'INCREMENT_SCORE':
-      const newScore = state.score + 10;
-      const newLevel = Math.floor(newScore / 100) + 1;
-      return {
-        ...state,
-        score: newScore,
-        level: newLevel
-      };
-
-    case 'GAME_OVER':
-      return {
-        ...state,
-        isGameOver: true
-      };
-
     case 'RESET_GAME':
-      return initialGameState;
+      return initialState;
 
     case 'START_COMBAT':
       return {
         ...state,
         isInCombat: true,
-        currentEnemy: action.payload
+        enemies: [...state.enemies, action.payload]
       };
 
     case 'END_COMBAT':
       return {
         ...state,
         isInCombat: false,
-        currentEnemy: null
+        enemies: state.enemies.filter(e => e !== state.enemies[state.enemies.length - 1])
       };
 
-    case 'ATTACK_ENEMY':
-      if (!state.currentEnemy) return state;
-      
-      const enemyDamage = Math.max(0, state.player.attack - state.currentEnemy.defense);
-      const newEnemyHealth = state.currentEnemy.health - enemyDamage;
-      
+    case 'ATTACK_ENEMY': {
+      if (state.enemies.length === 0) return state;
+      const enemy = state.enemies[state.enemies.length - 1];
+      const damage = Math.max(1, state.player.attack - enemy.defense);
+      const newEnemyHealth = enemy.health - damage;
+
+      let message = `You attacked ${enemy.name} for ${damage} damage!`;
+
       if (newEnemyHealth <= 0) {
-        const newEnemiesDefeated = state.player.enemiesDefeated + 1;
-        const currentLocationIndex = SAN_FRANCISCO_LOCATIONS.findIndex(
-          loc => loc.name.toLowerCase().replace(' ', '-') === state.currentLocation
-        );
-        
-        // Check if player can advance to next location
-        if (currentLocationIndex < SAN_FRANCISCO_LOCATIONS.length - 1 &&
-            newEnemiesDefeated >= SAN_FRANCISCO_LOCATIONS[currentLocationIndex + 1].requiredEnemiesDefeated) {
-          return {
-            ...state,
-            player: {
-              ...state.player,
-              enemiesDefeated: newEnemiesDefeated,
-              experience: state.player.experience + 50
-            },
-            isInCombat: false,
-            currentEnemy: null,
-            currentLocation: SAN_FRANCISCO_LOCATIONS[currentLocationIndex + 1].name.toLowerCase().replace(' ', '-')
-          };
-        }
-        
+        message += `\nYou defeated ${enemy.name}!`;
         return {
           ...state,
+          isInCombat: false,
+          enemies: state.enemies.slice(0, -1),
           player: {
             ...state.player,
-            enemiesDefeated: newEnemiesDefeated,
-            experience: state.player.experience + 50
+            score: state.player.score + 100,
+            enemiesDefeated: state.player.enemiesDefeated + 1,
+            experience: state.player.experience + 50,
+            isDefending: false,
           },
-          isInCombat: false,
-          currentEnemy: null
+          message,
         };
       }
-      
-      const playerDamage = Math.max(0, state.currentEnemy.attack - state.player.defense);
-      const newPlayerHealth = state.player.health - playerDamage;
-      
-      if (newPlayerHealth <= 0) {
-        return {
-          ...state,
-          isGameOver: true
-        };
-      }
-      
+
+      // Enemy counterattacks
+      const playerDefense = state.player.isDefending ? state.player.defense * 2 : state.player.defense;
+      const enemyDamage = Math.max(1, enemy.attack - playerDefense);
+      const newPlayerHealth = state.player.health - enemyDamage;
+
+      message += `\n${enemy.name} counterattacked for ${enemyDamage} damage!`;
+
       return {
         ...state,
         player: {
           ...state.player,
-          health: newPlayerHealth
+          health: newPlayerHealth,
+          isDefending: false,
         },
-        currentEnemy: {
-          ...state.currentEnemy,
-          health: newEnemyHealth
-        }
+        enemies: state.enemies.map((e, i) =>
+          i === state.enemies.length - 1 ? { ...e, health: newEnemyHealth } : e
+        ),
+        isGameOver: newPlayerHealth <= 0,
+        message,
       };
+    }
 
-    case 'DEFEND':
-      if (!state.currentEnemy) return state;
-      
-      const reducedDamage = Math.max(0, state.currentEnemy.attack - state.player.defense * 2);
-      const playerHealthAfterDefend = state.player.health - reducedDamage;
-      
-      if (playerHealthAfterDefend <= 0) {
-        return {
-          ...state,
-          isGameOver: true
-        };
-      }
-      
+    case 'DEFEND': {
       return {
         ...state,
         player: {
           ...state.player,
-          health: playerHealthAfterDefend
-        }
+          isDefending: true,
+        },
+        message: 'You brace yourself and defend! Incoming damage will be reduced.',
       };
+    }
 
-    case 'RUN_FROM_COMBAT':
-      const runChance = Math.random();
-      if (runChance > 0.5) {
-        return {
-          ...state,
-          isInCombat: false,
-          currentEnemy: null
-        };
-      }
+    case 'FLEE':
+      if (state.enemies.length === 0) return state;
       
-      if (!state.currentEnemy) return state;
-      
-      const runDamage = Math.max(0, state.currentEnemy.attack - state.player.defense);
+      const runDamage = Math.max(0, state.enemies[state.enemies.length - 1].attack - state.player.defense);
       const playerHealthAfterRun = state.player.health - runDamage;
       
       if (playerHealthAfterRun <= 0) {
         return {
           ...state,
-          isGameOver: true
+          isGameOver: true,
+          player: {
+            ...state.player,
+            health: 0
+          }
         };
       }
       
       return {
         ...state,
+        isInCombat: false,
         player: {
           ...state.player,
           health: playerHealthAfterRun
-        }
+        },
+        enemies: state.enemies.filter(e => e !== state.enemies[state.enemies.length - 1])
       };
 
-    case 'CHANGE_LOCATION':
-      const nextLocationIndex = SAN_FRANCISCO_LOCATIONS.findIndex(
-        loc => loc.name.toLowerCase().replace(' ', '-') === state.currentLocation
-      ) + 1;
-      
-      if (nextLocationIndex >= SAN_FRANCISCO_LOCATIONS.length) return state;
-      
+    case 'COMBAT_ACTION':
+      if (state.enemies.length === 0) return state;
       return {
         ...state,
-        currentLocation: SAN_FRANCISCO_LOCATIONS[nextLocationIndex].name.toLowerCase().replace(' ', '-'),
-        obstacles: []
+        isInCombat: false,
+        enemies: state.enemies.filter(e => e !== state.enemies[state.enemies.length - 1])
+      };
+
+    case 'SET_MESSAGE':
+      return {
+        ...state,
+        message: action.payload
       };
 
     default:
@@ -265,40 +229,74 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
   }
 };
 
-interface GameContextType {
+export const GameContext = createContext<{
   state: GameState;
   dispatch: React.Dispatch<GameAction>;
-}
+}>({
+  state: initialState,
+  dispatch: () => null
+});
 
-const GameContext = createContext<GameContextType | undefined>(undefined);
+export const useGame = () => useContext(GameContext);
 
-export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(gameReducer, initialGameState);
+export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(gameReducer, initialState);
 
   // Debug logging for spawn attempts
   useEffect(() => {
-    console.log('Game state:', {
-      isInCombat: state.isInCombat,
-      isGameOver: state.isGameOver,
-      currentLocation: state.currentLocation,
-      obstacles: state.obstacles
-    });
+    console.log('Game State:', state);
   }, [state]);
 
+  // Spawn enemies and obstacles
   useEffect(() => {
-    // Spawn enemies more frequently
+    console.log('Setting up spawn interval');
     const spawnInterval = setInterval(() => {
       if (!state.isInCombat && !state.isGameOver) {
-        // Increase spawn chance to 70%
-        if (Math.random() < 0.7) {
-          console.log('Attempting to spawn enemy...');
-          dispatch({ type: 'SPAWN_ENEMY' });
-        } else {
-          console.log('Attempting to spawn obstacle...');
-          dispatch({ type: 'SPAWN_OBSTACLE' });
+        console.log('Spawn interval triggered');
+        console.log('Current state:', state);
+        console.log('Current enemy count:', state.enemies.length);
+        
+        const currentLocation = SAN_FRANCISCO_LOCATIONS[state.currentLocation];
+        console.log('Current location:', currentLocation);
+        
+        // Check if we've reached the enemy limit
+        if (state.enemies.length >= MAX_ENEMIES) {
+          console.log('Enemy spawn limit reached!');
+          dispatch({ type: 'SET_MESSAGE', payload: 'Enemy spawn limit reached!' });
+          return;
+        }
+        
+        if (Math.random() < 0.7) { // 70% chance to spawn enemy
+          const randomEnemy = currentLocation.enemies[Math.floor(Math.random() * currentLocation.enemies.length)];
+          console.log('Spawning enemy:', randomEnemy);
+          
+          dispatch({
+            type: 'SPAWN_ENEMY',
+            payload: {
+              ...randomEnemy,
+              position: {
+                x: Math.random() * 800,
+                y: Math.random() * 600
+              }
+            }
+          });
+        } else { // 30% chance to spawn obstacle
+          const randomObstacle = currentLocation.obstacles[Math.floor(Math.random() * currentLocation.obstacles.length)];
+          console.log('Spawning obstacle:', randomObstacle);
+          
+          dispatch({
+            type: 'SPAWN_OBSTACLE',
+            payload: {
+              ...randomObstacle,
+              position: {
+                x: Math.random() * 800,
+                y: Math.random() * 600
+              }
+            }
+          });
         }
       }
-    }, 2000); // Reduced interval to 2 seconds
+    }, 2000);
 
     const collisionInterval = setInterval(() => {
       if (!state.isInCombat && !state.isGameOver) {
@@ -307,22 +305,56 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 100);
 
     return () => {
+      console.log('Cleaning up intervals');
       clearInterval(spawnInterval);
       clearInterval(collisionInterval);
     };
-  }, [state.isInCombat, state.isGameOver]);
+  }, [state.isInCombat, state.isGameOver, state.currentLocation, state.enemies.length]);
+
+  const movePlayer = (x: number, y: number) => {
+    dispatch({ type: 'MOVE_PLAYER', payload: { x, y } });
+  };
+
+  const startCombat = (enemy: Enemy) => {
+    dispatch({ type: 'START_COMBAT', payload: enemy });
+  };
+
+  const endCombat = () => {
+    dispatch({ type: 'END_COMBAT' });
+  };
+
+  const handleCombatAction = (action: 'attack' | 'defend' | 'flee') => {
+    dispatch({ type: 'COMBAT_ACTION', payload: action });
+  };
+
+  const handleCombatChoice = (choice: 'attack' | 'defend' | 'flee') => {
+    switch (choice) {
+      case 'attack':
+        dispatch({ type: 'ATTACK_ENEMY' });
+        break;
+      case 'defend':
+        dispatch({ type: 'DEFEND' });
+        break;
+      case 'flee':
+        dispatch({ type: 'FLEE' });
+        break;
+    }
+  };
+
+  const handleCombatReward = (reward: any) => {
+    dispatch({ type: 'COMBAT_REWARD', payload: reward });
+  };
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>
+      {state.message && (
+        <div className="game-message">
+          {state.message.split('\n').map((line, i) => (
+            <div key={i}>{line}</div>
+          ))}
+        </div>
+      )}
       {children}
     </GameContext.Provider>
   );
-};
-
-export const useGame = () => {
-  const context = useContext(GameContext);
-  if (context === undefined) {
-    throw new Error('useGame must be used within a GameProvider');
-  }
-  return context;
 }; 

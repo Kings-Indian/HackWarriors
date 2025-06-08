@@ -1,200 +1,159 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { Player, Enemy, Obstacle } from '../types/game';
+import { useNavigate } from 'react-router-dom';
 import { SAN_FRANCISCO_LOCATIONS } from '../types/game';
-import { locationImages } from '../assets/locations';
-import Combat from './Combat';
-
-type LocationKey = 'fishermans-wharf' | 'pier-39' | 'chinatown' | 'golden-gate-park' | 'haight-ashbury';
+import '../styles/Game.css';
 
 const Game: React.FC = () => {
   const { state, dispatch } = useGame();
-  const { player, obstacles, score, level, isGameOver, isInCombat, currentEnemy, currentLocation } = state;
-  const [randomBackground, setRandomBackground] = useState<LocationKey>('fishermans-wharf');
+  const [background, setBackground] = useState<string>('');
 
-  // Function to get random background
-  const getRandomBackground = () => {
-    const locations: LocationKey[] = [
-      'fishermans-wharf',
-      'pier-39',
-      'chinatown',
-      'golden-gate-park',
-      'haight-ashbury'
-    ];
-    const randomIndex = Math.floor(Math.random() * locations.length);
-    return locations[randomIndex];
-  };
-
-  // Change background every 5 seconds
   useEffect(() => {
+    const getRandomBackground = () => {
+      const location = SAN_FRANCISCO_LOCATIONS[state.currentLocation];
+      return location.background;
+    };
+
+    setBackground(getRandomBackground());
     const interval = setInterval(() => {
-      setRandomBackground(getRandomBackground());
+      setBackground(getRandomBackground());
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [state.currentLocation]);
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (isInCombat) return;
+    console.log('Game state updated:', state);
+  }, [state]);
 
-      const moveDistance = 10;
-      switch (e.key) {
-        case 'ArrowUp':
+  // Handle player movement
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (state.isInCombat || state.isGameOver) return;
+
+      const speed = 10;
+      switch(e.key.toLowerCase()) {
         case 'w':
-          dispatch({ type: 'MOVE_PLAYER', payload: { x: 0, y: -moveDistance } });
+        case 'arrowup':
+          dispatch({ type: 'MOVE_PLAYER', payload: { x: 0, y: -speed } });
           break;
-        case 'ArrowDown':
         case 's':
-          dispatch({ type: 'MOVE_PLAYER', payload: { x: 0, y: moveDistance } });
+        case 'arrowdown':
+          dispatch({ type: 'MOVE_PLAYER', payload: { x: 0, y: speed } });
           break;
-        case 'ArrowLeft':
         case 'a':
-          dispatch({ type: 'MOVE_PLAYER', payload: { x: -moveDistance, y: 0 } });
+        case 'arrowleft':
+          dispatch({ type: 'MOVE_PLAYER', payload: { x: -speed, y: 0 } });
           break;
-        case 'ArrowRight':
         case 'd':
-          dispatch({ type: 'MOVE_PLAYER', payload: { x: moveDistance, y: 0 } });
+        case 'arrowright':
+          dispatch({ type: 'MOVE_PLAYER', payload: { x: speed, y: 0 } });
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [dispatch, isInCombat]);
-
-  const currentLocationData = SAN_FRANCISCO_LOCATIONS.find(
-    loc => loc.name.toLowerCase().replace(/\s+/g, '-') === currentLocation
-  );
-
-  // Debug logging
-  useEffect(() => {
-    console.log('Current Location:', currentLocation);
-    console.log('Location Data:', currentLocationData);
-    console.log('Location Images:', locationImages);
-    console.log('Background Image URL:', locationImages[randomBackground]);
-    console.log('Obstacles:', obstacles);
-    console.log('Player Position:', player.position);
-  }, [currentLocation, currentLocationData, obstacles, player.position, randomBackground]);
-
-  const formatLocationName = (name: string) => {
-    return name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  };
-
-  if (isGameOver) {
-    return (
-      <div className="game-over">
-        <h2>Game Over!</h2>
-        <p>Final Score: {score}</p>
-        <button onClick={() => dispatch({ type: 'RESET_GAME' })}>Play Again</button>
-      </div>
-    );
-  }
-
-  const backgroundImageUrl = locationImages[randomBackground];
-  console.log('Rendering with background:', backgroundImageUrl);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [dispatch, state.isInCombat, state.isGameOver]);
 
   return (
     <div className="game-container">
       <div 
-        className="game-area"
+        className="game-background"
         style={{
-          backgroundImage: `url(${backgroundImageUrl})`,
+          backgroundImage: `url(${background})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          position: 'relative',
-          width: '800px',
-          height: '600px',
-          border: '2px solid #333',
-          overflow: 'hidden',
-          transition: 'background-image 1s ease-in-out'
+          width: '100%',
+          height: '100%',
+          position: 'relative'
         }}
       >
+        {/* Player */}
         <div
-          className="player"
           style={{
             position: 'absolute',
-            left: `${player.position.x}px`,
-            top: `${player.position.y}px`,
-            width: '30px',
-            height: '30px',
+            left: state.player.position.x,
+            top: state.player.position.y,
+            width: '50px',
+            height: '50px',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '24px',
-            zIndex: 2
+            transition: 'all 0.1s ease-in-out'
           }}
         >
-          🧼
+          👤
         </div>
-        {obstacles.map((obstacle, index) => (
+
+        {/* Enemies */}
+        {state.enemies.map((enemy, index) => (
           <div
-            key={index}
-            className={`obstacle ${obstacle.type}`}
+            key={`enemy-${index}`}
             style={{
               position: 'absolute',
-              left: `${obstacle.position.x}px`,
-              top: `${obstacle.position.y}px`,
-              width: '30px',
-              height: '30px',
+              left: enemy.position.x,
+              top: enemy.position.y,
+              width: '50px',
+              height: '50px',
+              backgroundColor: 'rgba(255, 0, 0, 0.8)',
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '24px',
-              zIndex: 1
+              transition: 'all 0.1s ease-in-out'
             }}
           >
-            {obstacle.type === 'enemy' ? (obstacle as Enemy).sprite : obstacle.sprite || '🚧'}
+            {enemy.sprite}
           </div>
         ))}
-      </div>
 
-      {isInCombat && currentEnemy && (
-        <Combat
-          player={player}
-          enemy={currentEnemy}
-          onAttack={() => dispatch({ type: 'ATTACK_ENEMY' })}
-          onDefend={() => dispatch({ type: 'DEFEND' })}
-          onRun={() => dispatch({ type: 'RUN_FROM_COMBAT' })}
-        />
-      )}
+        {/* Obstacles */}
+        {state.obstacles.map((obstacle, index) => (
+          <div
+            key={`obstacle-${index}`}
+            style={{
+              position: 'absolute',
+              left: obstacle.position.x,
+              top: obstacle.position.y,
+              width: '50px',
+              height: '50px',
+              backgroundColor: 'rgba(255, 165, 0, 0.8)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '24px',
+              transition: 'all 0.1s ease-in-out'
+            }}
+          >
+            {obstacle.sprite}
+          </div>
+        ))}
 
-      <div className="game-stats">
-        <div className="stat">
-          <span>Location:</span>
-          <span>{formatLocationName(currentLocation)}</span>
-        </div>
-        <div className="stat">
-          <span>Score:</span>
-          <span>{score}</span>
-        </div>
-        <div className="stat">
-          <span>Level:</span>
-          <span>{level}</span>
-        </div>
-        <div className="stat">
-          <span>Health:</span>
-          <div className="health-bar">
-            <div
-              className="health-fill"
-              style={{ width: `${(player.health / 100) * 100}%` }}
-            />
+        {/* Combat UI */}
+        {state.isInCombat && state.enemies.length > 0 && (
+          <div className="combat-ui">
+            <h2>Combat with {state.enemies[state.enemies.length - 1].name}</h2>
+            <div className="combat-actions">
+              <button onClick={() => dispatch({ type: 'ATTACK_ENEMY' })}>Attack</button>
+              <button onClick={() => dispatch({ type: 'DEFEND' })}>Defend</button>
+              <button onClick={() => dispatch({ type: 'FLEE' })}>Flee</button>
+            </div>
           </div>
-        </div>
-        <div className="stat">
-          <span>Experience:</span>
-          <div className="experience-bar">
-            <div
-              className="experience-fill"
-              style={{ width: `${(player.experience / 100) * 100}%` }}
-            />
+        )}
+
+        {/* Game Over UI */}
+        {state.isGameOver && (
+          <div className="game-over">
+            <h2>Game Over</h2>
+            <button onClick={() => dispatch({ type: 'RESET_GAME' })}>Play Again</button>
           </div>
-        </div>
-        <div className="stat">
-          <span>Enemies Defeated:</span>
-          <span>{player.enemiesDefeated}</span>
-        </div>
+        )}
       </div>
     </div>
   );
