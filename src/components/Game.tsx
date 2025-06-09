@@ -122,6 +122,57 @@ const Game: React.FC = () => {
   return (
     <>
       <div className="deep-background"></div>
+      
+      {/* Side Panel */}
+      <div className="side-panel">
+        {/* Player Stats */}
+        <div className="player-stats">
+          <div className="player-a-stats">
+            <h3>Player A (Arrows + Enter)</h3>
+            <div>Health: {state.playerA.health}</div>
+            <div>Score: {state.playerA.score}</div>
+            <div>Enemies Defeated: {state.playerA.enemiesDefeated}</div>
+          </div>
+          <div className="player-b-stats">
+            <h3>Player B (WASD + Space)</h3>
+            <div>Health: {state.playerB.health}</div>
+            <div>Score: {state.playerB.score}</div>
+            <div>Enemies Defeated: {state.playerB.enemiesDefeated}</div>
+          </div>
+        </div>
+
+        {/* Combat UI */}
+        {state.isInCombat && state.enemies.length > 0 && (
+          <div className="combat-ui">
+            <h2>Combat with {state.enemies[state.enemies.length - 1].name}</h2>
+            <div className="combat-actions">
+              <div className="player-a-controls">
+                <h3>Player A Controls:</h3>
+                <p>Press Enter to Attack</p>
+              </div>
+              <div className="player-b-controls">
+                <h3>Player B Controls:</h3>
+                <p>Press Space to Attack</p>
+              </div>
+              <p className="flee-controls">Press Escape to Flee</p>
+            </div>
+          </div>
+        )}
+
+        {/* Game Over UI */}
+        {state.isGameOver && (
+          <div className="game-over">
+            <h2>Game Over</h2>
+            <div className="final-scores">
+              <div>Player A Score: {state.playerA.score}</div>
+              <div>Player B Score: {state.playerB.score}</div>
+            </div>
+            <button onClick={() => dispatch({ type: 'RESET_GAME' })}>Play Again</button>
+          </div>
+        )}
+      </div>
+
+      {/* Game Container */}
       <div className="game-container crt">
         <div 
           className="game-background"
@@ -221,52 +272,6 @@ const Game: React.FC = () => {
               {obstacle.sprite}
             </div>
           ))}
-
-          {/* Player Stats */}
-          <div className="player-stats">
-            <div className="player-a-stats">
-              <h3>Player A (Arrows + Enter)</h3>
-              <div>Health: {state.playerA.health}</div>
-              <div>Score: {state.playerA.score}</div>
-              <div>Enemies Defeated: {state.playerA.enemiesDefeated}</div>
-            </div>
-            <div className="player-b-stats">
-              <h3>Player B (WASD + Space)</h3>
-              <div>Health: {state.playerB.health}</div>
-              <div>Score: {state.playerB.score}</div>
-              <div>Enemies Defeated: {state.playerB.enemiesDefeated}</div>
-            </div>
-          </div>
-
-          {/* Combat UI */}
-          {state.isInCombat && state.enemies.length > 0 && (
-            <div className="combat-ui">
-              <h2>Combat with {state.enemies[state.enemies.length - 1].name}</h2>
-              <div className="combat-actions">
-                <div className="player-a-controls">
-                  <h3>Player A Controls:</h3>
-                  <p>Press Enter to Attack</p>
-                </div>
-                <div className="player-b-controls">
-                  <h3>Player B Controls:</h3>
-                  <p>Press Space to Attack</p>
-                </div>
-                <p className="flee-controls">Press Escape to Flee</p>
-              </div>
-            </div>
-          )}
-
-          {/* Game Over UI */}
-          {state.isGameOver && (
-            <div className="game-over">
-              <h2>Game Over</h2>
-              <div className="final-scores">
-                <div>Player A Score: {state.playerA.score}</div>
-                <div>Player B Score: {state.playerB.score}</div>
-              </div>
-              <button onClick={() => dispatch({ type: 'RESET_GAME' })}>Play Again</button>
-            </div>
-          )}
         </div>
       </div>
     </>
