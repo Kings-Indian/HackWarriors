@@ -2,18 +2,17 @@ import React, { createContext, useContext, useReducer, ReactNode, useEffect } fr
 import { GameState, Enemy, Obstacle, SAN_FRANCISCO_LOCATIONS } from '../types/game';
 
 type GameAction =
-  | { type: 'MOVE_PLAYER'; payload: { x: number; y: number } }
+  | { type: 'MOVE_PLAYER_A'; payload: { x: number; y: number } }
+  | { type: 'MOVE_PLAYER_B'; payload: { x: number; y: number } }
   | { type: 'SPAWN_ENEMY'; payload: Enemy }
   | { type: 'SPAWN_OBSTACLE'; payload: Obstacle }
   | { type: 'CHECK_COLLISION' }
-  | { type: 'START_COMBAT'; payload: Enemy }
+  | { type: 'START_COMBAT'; payload: { enemy: Enemy; player: 'A' | 'B' } }
   | { type: 'END_COMBAT' }
-  | { type: 'ATTACK_ENEMY' }
-  | { type: 'DEFEND' }
-  | { type: 'FLEE' }
+  | { type: 'ATTACK_ENEMY'; payload: 'A' | 'B' }
+  | { type: 'DEFEND'; payload: 'A' | 'B' }
+  | { type: 'FLEE'; payload: 'A' | 'B' }
   | { type: 'RESET_GAME' }
-  | { type: 'COMBAT_ACTION'; payload: 'attack' | 'defend' | 'flee' }
-  | { type: 'COMBAT_REWARD'; payload: any }
   | { type: 'SET_MESSAGE'; payload: string };
 
 const initialState: GameState = {
@@ -22,8 +21,8 @@ const initialState: GameState = {
   isGameOver: false,
   enemies: [],
   obstacles: [],
-  player: {
-    position: { x: 400, y: 300 },
+  playerA: {
+    position: { x: 100, y: 100 },
     health: 100,
     attack: 10,
     defense: 5,
@@ -34,6 +33,19 @@ const initialState: GameState = {
     experience: 0,
     isDefending: false
   },
+  playerB: {
+    position: { x: 200, y: 100 },
+    health: 100,
+    attack: 10,
+    defense: 5,
+    speed: 5,
+    score: 0,
+    level: 1,
+    enemiesDefeated: 0,
+    experience: 0,
+    isDefending: false
+  },
+  activePlayer: null,
   message: '',
 };
 
@@ -41,15 +53,27 @@ const MAX_ENEMIES = 15;
 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
-    case 'MOVE_PLAYER':
+    case 'MOVE_PLAYER_A':
       if (state.isInCombat) return state;
-      const newX = Math.max(30, Math.min(770, state.player.position.x + action.payload.x));
-      const newY = Math.max(30, Math.min(570, state.player.position.y + action.payload.y));
+      const newXA = Math.max(30, Math.min(770, state.playerA.position.x + action.payload.x));
+      const newYA = Math.max(30, Math.min(570, state.playerA.position.y + action.payload.y));
       return {
         ...state,
-        player: {
-          ...state.player,
-          position: { x: newX, y: newY }
+        playerA: {
+          ...state.playerA,
+          position: { x: newXA, y: newYA }
+        }
+      };
+
+    case 'MOVE_PLAYER_B':
+      if (state.isInCombat) return state;
+      const newXB = Math.max(30, Math.min(770, state.playerB.position.x + action.payload.x));
+      const newYB = Math.max(30, Math.min(570, state.playerB.position.y + action.payload.y));
+      return {
+        ...state,
+        playerB: {
+          ...state.playerB,
+          position: { x: newXB, y: newYB }
         }
       };
 
@@ -66,39 +90,44 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
 
     case 'CHECK_COLLISION':
-      const playerPos = state.player.position;
-      const collidedObstacle = state.obstacles.find(obstacle => {
-        const dx = playerPos.x - obstacle.position.x;
-        const dy = playerPos.y - obstacle.position.y;
+      const playerAPos = state.playerA.position;
+      const playerBPos = state.playerB.position;
+
+      // Check collisions for both players
+      const collidedEnemyA = state.enemies.find(enemy => {
+        const dx = playerAPos.x - enemy.position.x;
+        const dy = playerAPos.y - enemy.position.y;
         return Math.sqrt(dx * dx + dy * dy) < 50;
       });
 
-      if (collidedObstacle) {
-          return {
-            ...state,
-            isInCombat: true,
-          obstacles: state.obstacles.filter(o => o !== collidedObstacle),
-          player: {
-            ...state.player,
-            health: state.player.health - 10
-          }
-          };
-        }
-
-      const collidedEnemy = state.enemies.find(enemy => {
-        const dx = playerPos.x - enemy.position.x;
-        const dy = playerPos.y - enemy.position.y;
+      const collidedEnemyB = state.enemies.find(enemy => {
+        const dx = playerBPos.x - enemy.position.x;
+        const dy = playerBPos.y - enemy.position.y;
         return Math.sqrt(dx * dx + dy * dy) < 50;
       });
 
-      if (collidedEnemy) {
+      if (collidedEnemyA) {
         return {
           ...state,
           isInCombat: true,
-          enemies: state.enemies.filter(e => e !== collidedEnemy),
-          player: {
-            ...state.player,
-            health: state.player.health - 10
+          activePlayer: 'A',
+          enemies: state.enemies.filter(e => e !== collidedEnemyA),
+          playerA: {
+            ...state.playerA,
+            health: state.playerA.health - 10
+          }
+        };
+      }
+
+      if (collidedEnemyB) {
+        return {
+          ...state,
+          isInCombat: true,
+          activePlayer: 'B',
+          enemies: state.enemies.filter(e => e !== collidedEnemyB),
+          playerB: {
+            ...state.playerB,
+            health: state.playerB.health - 10
           }
         };
       }
@@ -112,35 +141,41 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         isInCombat: true,
-        enemies: [...state.enemies, action.payload]
+        activePlayer: action.payload.player,
+        enemies: [...state.enemies, action.payload.enemy]
       };
 
     case 'END_COMBAT':
       return {
         ...state,
         isInCombat: false,
+        activePlayer: null,
         enemies: state.enemies.filter(e => e !== state.enemies[state.enemies.length - 1])
       };
 
     case 'ATTACK_ENEMY': {
       if (state.enemies.length === 0) return state;
       const enemy = state.enemies[state.enemies.length - 1];
-      const damage = Math.max(1, state.player.attack - enemy.defense);
+      const activePlayer = action.payload;
+      const player = activePlayer === 'A' ? state.playerA : state.playerB;
+      
+      const damage = Math.max(1, player.attack - enemy.defense);
       const newEnemyHealth = enemy.health - damage;
 
-      let message = `You attacked ${enemy.name} for ${damage} damage!`;
+      let message = `Player ${activePlayer} attacked ${enemy.name} for ${damage} damage!`;
       
       if (newEnemyHealth <= 0) {
-        message += `\nYou defeated ${enemy.name}!`;
+        message += `\nPlayer ${activePlayer} defeated ${enemy.name}!`;
         return {
           ...state,
           isInCombat: false,
+          activePlayer: null,
           enemies: state.enemies.slice(0, -1),
-          player: {
-            ...state.player,
-            score: state.player.score + 100,
-            enemiesDefeated: state.player.enemiesDefeated + 1,
-            experience: state.player.experience + 50,
+          [activePlayer === 'A' ? 'playerA' : 'playerB']: {
+            ...player,
+            score: player.score + 100,
+            enemiesDefeated: player.enemiesDefeated + 1,
+            experience: player.experience + 50,
             isDefending: false,
           },
           message,
@@ -148,16 +183,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       }
 
       // Enemy counterattacks
-      const playerDefense = state.player.isDefending ? state.player.defense * 2 : state.player.defense;
+      const playerDefense = player.isDefending ? player.defense * 2 : player.defense;
       const enemyDamage = Math.max(1, enemy.attack - playerDefense);
-      const newPlayerHealth = state.player.health - enemyDamage;
+      const newPlayerHealth = player.health - enemyDamage;
 
       message += `\n${enemy.name} counterattacked for ${enemyDamage} damage!`;
       
       return {
         ...state,
-        player: {
-          ...state.player,
+        [activePlayer === 'A' ? 'playerA' : 'playerB']: {
+          ...player,
           health: newPlayerHealth,
           isDefending: false,
         },
@@ -166,32 +201,37 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ),
         isGameOver: newPlayerHealth <= 0,
         message,
-        };
-      }
+      };
+    }
       
     case 'DEFEND': {
+      const activePlayer = action.payload;
+      const player = activePlayer === 'A' ? state.playerA : state.playerB;
+      
       return {
         ...state,
-        player: {
-          ...state.player,
+        [activePlayer === 'A' ? 'playerA' : 'playerB']: {
+          ...player,
           isDefending: true,
         },
-        message: 'You brace yourself and defend! Incoming damage will be reduced.',
-        };
-      }
+        message: `Player ${activePlayer} braces themselves and defends! Incoming damage will be reduced.`,
+      };
+    }
       
-    case 'FLEE':
+    case 'FLEE': {
       if (state.enemies.length === 0) return state;
       
-      const runDamage = Math.max(0, state.enemies[state.enemies.length - 1].attack - state.player.defense);
-      const playerHealthAfterRun = state.player.health - runDamage;
+      const activePlayer = action.payload;
+      const player = activePlayer === 'A' ? state.playerA : state.playerB;
+      const runDamage = Math.max(0, state.enemies[state.enemies.length - 1].attack - player.defense);
+      const playerHealthAfterRun = player.health - runDamage;
       
       if (playerHealthAfterRun <= 0) {
         return {
           ...state,
           isGameOver: true,
-          player: {
-            ...state.player,
+          [activePlayer === 'A' ? 'playerA' : 'playerB']: {
+            ...player,
             health: 0
           }
         };
@@ -200,20 +240,14 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         isInCombat: false,
-        player: {
-          ...state.player,
+        activePlayer: null,
+        [activePlayer === 'A' ? 'playerA' : 'playerB']: {
+          ...player,
           health: playerHealthAfterRun
         },
         enemies: state.enemies.filter(e => e !== state.enemies[state.enemies.length - 1])
       };
-
-    case 'COMBAT_ACTION':
-      if (state.enemies.length === 0) return state;
-      return {
-        ...state,
-        isInCombat: false,
-        enemies: state.enemies.filter(e => e !== state.enemies[state.enemies.length - 1])
-      };
+    }
 
     case 'SET_MESSAGE':
       return {
@@ -304,40 +338,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       clearInterval(collisionInterval);
     };
   }, [state.isInCombat, state.isGameOver, state.currentLocation, state.enemies.length]);
-
-  const movePlayer = (x: number, y: number) => {
-    dispatch({ type: 'MOVE_PLAYER', payload: { x, y } });
-  };
-
-  const startCombat = (enemy: Enemy) => {
-    dispatch({ type: 'START_COMBAT', payload: enemy });
-  };
-
-  const endCombat = () => {
-    dispatch({ type: 'END_COMBAT' });
-  };
-
-  const handleCombatAction = (action: 'attack' | 'defend' | 'flee') => {
-    dispatch({ type: 'COMBAT_ACTION', payload: action });
-  };
-
-  const handleCombatChoice = (choice: 'attack' | 'defend' | 'flee') => {
-    switch (choice) {
-      case 'attack':
-        dispatch({ type: 'ATTACK_ENEMY' });
-        break;
-      case 'defend':
-        dispatch({ type: 'DEFEND' });
-        break;
-      case 'flee':
-        dispatch({ type: 'FLEE' });
-        break;
-    }
-  };
-
-  const handleCombatReward = (reward: any) => {
-    dispatch({ type: 'COMBAT_REWARD', payload: reward });
-  };
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>

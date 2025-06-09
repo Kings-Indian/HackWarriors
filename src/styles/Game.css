@@ -112,45 +112,6 @@
   z-index: 0;
 }
 
-/* Decorative elements */
-.decorative-elements {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.bubble {
-  position: absolute;
-  font-size: 2rem;
-  animation: float 6s ease-in-out infinite;
-}
-
-.bubble-1 {
-  top: 20%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.bubble-2 {
-  top: 30%;
-  right: 15%;
-  animation-delay: 1s;
-}
-
-.bubble-3 {
-  bottom: 25%;
-  left: 20%;
-  animation-delay: 2s;
-}
-
-.bubble-4 {
-  bottom: 35%;
-  right: 25%;
-  animation-delay: 3s;
-}
-
 .player {
   width: 50px;
   height: 50px;
@@ -248,4 +209,108 @@
 .game-over button:hover {
   background-color: #45a049;
   transform: scale(1.05);
+}
+
+.player-stats {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  gap: 20px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 10px;
+  color: white;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+}
+
+.player-a-stats, .player-b-stats {
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.player-a-stats {
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.player-b-stats {
+  border: 2px solid rgba(0, 255, 255, 0.8);
+}
+
+.player-a-stats h3, .player-b-stats h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  text-align: center;
+}
+
+.player-a-stats div, .player-b-stats div {
+  margin: 5px 0;
+}
+
+.player-a {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+.player-b {
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+.final-scores {
+  margin: 20px 0;
+  text-align: center;
+  font-size: 18px;
+}
+
+.final-scores div {
+  margin: 10px 0;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 5px;
+}
+
+.combat-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.player-a-controls, .player-b-controls {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  width: 200px;
+}
+
+.player-a-controls {
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.player-b-controls {
+  border: 2px solid rgba(0, 255, 255, 0.8);
+}
+
+.player-a-controls h3, .player-b-controls h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  color: white;
+}
+
+.player-a-controls p, .player-b-controls p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.flee-controls {
+  background: rgba(255, 0, 0, 0.2);
+  padding: 10px 20px;
+  border-radius: 5px;
+  color: #ff6b6b;
+  font-size: 14px;
+  margin-top: 10px;
 } 
