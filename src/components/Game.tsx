@@ -57,37 +57,49 @@ const Game: React.FC = () => {
   }, [dispatch, state.isInCombat, state.isGameOver]);
 
   return (
-    <>
-      <div className="deep-background"></div>
-      <div className="game-container crt">
-        <div 
-          className="game-background"
+    <div className="game-container">
+      <div 
+        className="game-background"
+        style={{
+          backgroundImage: `url(${background})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          width: '100%',
+          height: '100%',
+          position: 'relative'
+        }}
+      >
+        {/* Player */}
+        <div
           style={{
-            backgroundImage: `url(${background})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            width: '100%',
-            height: '100%',
-            position: 'relative'
+            position: 'absolute',
+            left: state.player.position.x,
+            top: state.player.position.y,
+            width: '50px',
+            height: '50px',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            transition: 'all 0.1s ease-in-out'
           }}
         >
-          {/* Decorative elements */}
-          <div className="decorative-elements">
-            <div className="bubble bubble-1">🧼</div>
-            <div className="bubble bubble-2">🚿</div>
-            <div className="bubble bubble-3">🧴</div>
-            <div className="bubble bubble-4">🪥</div>
-          </div>
+          👤
+        </div>
 
-          {/* Player */}
+        {/* Enemies */}
+        {state.enemies.map((enemy, index) => (
           <div
+            key={`enemy-${index}`}
             style={{
               position: 'absolute',
-              left: state.player.position.x,
-              top: state.player.position.y,
+              left: enemy.position.x,
+              top: enemy.position.y,
               width: '50px',
               height: '50px',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              backgroundColor: 'rgba(255, 0, 0, 0.8)',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -96,77 +108,54 @@ const Game: React.FC = () => {
               transition: 'all 0.1s ease-in-out'
             }}
           >
-            👤
+            {enemy.sprite}
           </div>
+        ))}
 
-          {/* Enemies */}
-          {state.enemies.map((enemy, index) => (
-            <div
-              key={`enemy-${index}`}
-              style={{
-                position: 'absolute',
-                left: enemy.position.x,
-                top: enemy.position.y,
-                width: '50px',
-                height: '50px',
-                backgroundColor: 'rgba(255, 0, 0, 0.8)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '24px',
-                transition: 'all 0.1s ease-in-out'
-              }}
-            >
-              {enemy.sprite}
-            </div>
-          ))}
+        {/* Obstacles */}
+        {state.obstacles.map((obstacle, index) => (
+          <div
+            key={`obstacle-${index}`}
+            style={{
+              position: 'absolute',
+              left: obstacle.position.x,
+              top: obstacle.position.y,
+              width: '50px',
+              height: '50px',
+              backgroundColor: 'rgba(255, 165, 0, 0.8)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '24px',
+              transition: 'all 0.1s ease-in-out'
+            }}
+          >
+            {obstacle.sprite}
+          </div>
+        ))}
 
-          {/* Obstacles */}
-          {state.obstacles.map((obstacle, index) => (
-            <div
-              key={`obstacle-${index}`}
-              style={{
-                position: 'absolute',
-                left: obstacle.position.x,
-                top: obstacle.position.y,
-                width: '50px',
-                height: '50px',
-                backgroundColor: 'rgba(255, 165, 0, 0.8)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '24px',
-                transition: 'all 0.1s ease-in-out'
-              }}
-            >
-              {obstacle.sprite}
+        {/* Combat UI */}
+        {state.isInCombat && state.enemies.length > 0 && (
+          <div className="combat-ui">
+            <h2>Combat with {state.enemies[state.enemies.length - 1].name}</h2>
+            <div className="combat-actions">
+              <button onClick={() => dispatch({ type: 'ATTACK_ENEMY' })}>Attack</button>
+              <button onClick={() => dispatch({ type: 'DEFEND' })}>Defend</button>
+              <button onClick={() => dispatch({ type: 'FLEE' })}>Flee</button>
             </div>
-          ))}
+          </div>
+        )}
 
-          {/* Combat UI */}
-          {state.isInCombat && state.enemies.length > 0 && (
-            <div className="combat-ui">
-              <h2>Combat with {state.enemies[state.enemies.length - 1].name}</h2>
-              <div className="combat-actions">
-                <button onClick={() => dispatch({ type: 'ATTACK_ENEMY' })}>Attack</button>
-                <button onClick={() => dispatch({ type: 'DEFEND' })}>Defend</button>
-                <button onClick={() => dispatch({ type: 'FLEE' })}>Flee</button>
-              </div>
-            </div>
-          )}
-
-          {/* Game Over UI */}
-          {state.isGameOver && (
-            <div className="game-over">
-              <h2>Game Over</h2>
-              <button onClick={() => dispatch({ type: 'RESET_GAME' })}>Play Again</button>
-            </div>
-          )}
-        </div>
+        {/* Game Over UI */}
+        {state.isGameOver && (
+          <div className="game-over">
+            <h2>Game Over</h2>
+            <button onClick={() => dispatch({ type: 'RESET_GAME' })}>Play Again</button>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
