@@ -11,33 +11,9 @@ const LEVEL_DESCRIPTIONS = {
   3: "You've reached the final level. Defeat the boss to win!"
 } as const;
 
-// Add proper type definitions
-interface GameState {
-  player: Player;
-  enemies: Enemy[];
-  obstacles: Obstacle[];
-  isInCombat: boolean;
-  isGameOver: boolean;
-  currentLocation: number;
-  message: string;
-}
-
-type GameAction = 
-  | { type: 'MOVE_PLAYER'; payload: { x: number; y: number } }
-  | { type: 'SPAWN_ENEMY' }
-  | { type: 'SPAWN_OBSTACLE' }
-  | { type: 'CHECK_COLLISION' }
-  | { type: 'START_COMBAT' }
-  | { type: 'END_COMBAT' }
-  | { type: 'ATTACK_ENEMY' }
-  | { type: 'DEFEND' }
-  | { type: 'FLEE' }
-  | { type: 'RESET_GAME' }
-  | { type: 'SET_MESSAGE'; payload: string };
-
 const MultiPlayerGame: React.FC = () => {
   const { state, dispatch } = useGame();
-  const { player, enemies, obstacles, isInCombat, isGameOver, currentLocation, message } = state;
+  const { playerA, playerB, enemies, obstacles, isInCombat, isGameOver, currentLocation, message } = state;
   const [isLoading, setIsLoading] = useState(true);
   const backgroundInterval = useRef<NodeJS.Timeout>();
   const navigate = useNavigate();
@@ -64,7 +40,6 @@ const MultiPlayerGame: React.FC = () => {
       dispatch({ type: 'SET_MESSAGE', payload: `Entering ${location.name}...` });
     };
 
-    // Clear existing interval
     if (backgroundInterval.current) {
       clearInterval(backgroundInterval.current);
     }
@@ -82,12 +57,12 @@ const MultiPlayerGame: React.FC = () => {
   const handleKeyPress = useCallback((e: KeyboardEvent) => {
     if (isGameOver) return;
 
-    const speed = player.speed;
-    let dx = 0;
-    let dy = 0;
-
-    // Movement controls
+    // Player A controls (Arrow keys)
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      const speed = playerA.speed;
+      let dx = 0;
+      let dy = 0;
+
       switch (e.key) {
         case 'ArrowUp':
           dy = -speed;
@@ -103,25 +78,48 @@ const MultiPlayerGame: React.FC = () => {
           break;
       }
 
-      dispatch({ type: 'MOVE_PLAYER', payload: { x: dx, y: dy } });
-      dispatch({ type: 'CHECK_COLLISION' });
+      dispatch({ type: 'MOVE_PLAYER_A', payload: { x: dx, y: dy } });
+    }
+
+    // Player B controls (WASD)
+    if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
+      const speed = playerB.speed;
+      let dx = 0;
+      let dy = 0;
+
+      switch (e.key.toLowerCase()) {
+        case 'w':
+          dy = -speed;
+          break;
+        case 's':
+          dy = speed;
+          break;
+        case 'a':
+          dx = -speed;
+          break;
+        case 'd':
+          dx = speed;
+          break;
+      }
+
+      dispatch({ type: 'MOVE_PLAYER_B', payload: { x: dx, y: dy } });
     }
 
     // Combat controls
     if (isInCombat) {
-      switch (e.key) {
+      switch (e.key.toLowerCase()) {
         case 'j':
-          dispatch({ type: 'ATTACK_ENEMY' });
+          dispatch({ type: 'ATTACK_ENEMY', payload: state.activePlayer || 'A' });
           break;
         case 'l':
-          dispatch({ type: 'DEFEND' });
+          dispatch({ type: 'DEFEND', payload: state.activePlayer || 'A' });
           break;
         case 'k':
-          dispatch({ type: 'FLEE' });
+          dispatch({ type: 'FLEE', payload: state.activePlayer || 'A' });
           break;
       }
     }
-  }, [isGameOver, isInCombat, dispatch, player.speed]);
+  }, [isGameOver, isInCombat, dispatch, playerA.speed, playerB.speed, state.activePlayer]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
@@ -156,34 +154,55 @@ const MultiPlayerGame: React.FC = () => {
         }}
       >
         <div className="level-info">
-          <h2>Level {player.level}</h2>
-          <p>{LEVEL_DESCRIPTIONS[player.level as keyof typeof LEVEL_DESCRIPTIONS]}</p>
+          <h2>Level {playerA.level}</h2>
+          <p>{LEVEL_DESCRIPTIONS[playerA.level as keyof typeof LEVEL_DESCRIPTIONS]}</p>
           <div className="level-stats">
             <div className="player-stats">
-              <h3>Player Stats</h3>
-              <div className="stat">Health: {player.health}</div>
-              <div className="stat">Attack: {player.attack}</div>
-              <div className="stat">Defense: {player.defense}</div>
-              <div className="stat">Experience: {player.experience}</div>
-              <div className="stat">Score: {player.score}</div>
-              <div className="stat">Enemies Defeated: {player.enemiesDefeated}</div>
+              <h3>Player A Stats</h3>
+              <div className="stat">Health: {playerA.health}</div>
+              <div className="stat">Attack: {playerA.attack}</div>
+              <div className="stat">Defense: {playerA.defense}</div>
+              <div className="stat">Experience: {playerA.experience}</div>
+              <div className="stat">Score: {playerA.score}</div>
+              <div className="stat">Enemies Defeated: {playerA.enemiesDefeated}</div>
+            </div>
+            <div className="player-stats">
+              <h3>Player B Stats</h3>
+              <div className="stat">Health: {playerB.health}</div>
+              <div className="stat">Attack: {playerB.attack}</div>
+              <div className="stat">Defense: {playerB.defense}</div>
+              <div className="stat">Experience: {playerB.experience}</div>
+              <div className="stat">Score: {playerB.score}</div>
+              <div className="stat">Enemies Defeated: {playerB.enemiesDefeated}</div>
             </div>
           </div>
         </div>
 
+        {/* Player A */}
         <div
-          className="player"
+          className="player player-a"
           style={{
-            left: `${player.position.x}px`,
-            top: `${player.position.y}px`
+            left: `${playerA.position.x}px`,
+            top: `${playerA.position.y}px`
           }}
         >
           🧑
         </div>
 
+        {/* Player B */}
+        <div
+          className="player player-b"
+          style={{
+            left: `${playerB.position.x}px`,
+            top: `${playerB.position.y}px`
+          }}
+        >
+          👨
+        </div>
+
         {enemies.map((enemy, index) => (
           <div
-            key={`${enemy.type}-${index}`}
+            key={`enemy-${index}`}
             className="enemy"
             style={{
               left: `${enemy.position.x}px`,
@@ -196,7 +215,7 @@ const MultiPlayerGame: React.FC = () => {
 
         {obstacles.map((obstacle, index) => (
           <div
-            key={`${obstacle.type}-${index}`}
+            key={`obstacle-${index}`}
             className="obstacle"
             style={{
               left: `${obstacle.position.x}px`,
@@ -207,54 +226,44 @@ const MultiPlayerGame: React.FC = () => {
           </div>
         ))}
 
+        {/* Combat UI */}
         {isInCombat && (
           <div className="combat-ui">
             <div className="player-controls">
               <h3>Combat Controls</h3>
-              <div className="combat-buttons">
-                <button 
-                  className="attack-button"
-                  onClick={() => dispatch({ type: 'ATTACK_ENEMY' })}
-                >
-                  Attack (J)
-                </button>
-                <button 
-                  className="defend-button"
-                  onClick={() => dispatch({ type: 'DEFEND' })}
-                >
-                  Defend (L)
-                </button>
-                <button 
-                  className="flee-button"
-                  onClick={() => dispatch({ type: 'FLEE' })}
-                >
-                  Flee (K)
-                </button>
-              </div>
+              <button onClick={() => dispatch({ type: 'ATTACK_ENEMY', payload: state.activePlayer || 'A' })}>Attack (J)</button>
+              <button onClick={() => dispatch({ type: 'DEFEND', payload: state.activePlayer || 'A' })}>Defend (L)</button>
+              <button onClick={() => dispatch({ type: 'FLEE', payload: state.activePlayer || 'A' })}>Flee (K)</button>
             </div>
           </div>
         )}
 
+        {/* Game Over */}
         {isGameOver && (
           <div className="game-over">
             <h2>Game Over!</h2>
-            <div className="game-stats">
-              <p>Final Score: {player.score}</p>
-              <p>Enemies Defeated: {player.enemiesDefeated}</p>
-              <p>Level Reached: {player.level}</p>
-              <p>Total Experience: {player.experience}</p>
+            <div className="final-scores">
+              <div className="player-score">
+                <h3>Player A</h3>
+                <p>Score: {playerA.score}</p>
+                <p>Enemies Defeated: {playerA.enemiesDefeated}</p>
+              </div>
+              <div className="player-score">
+                <h3>Player B</h3>
+                <p>Score: {playerB.score}</p>
+                <p>Enemies Defeated: {playerB.enemiesDefeated}</p>
+              </div>
             </div>
-            <div className="game-over-buttons">
-              <button onClick={handleRestart}>Play Again</button>
-              <button onClick={handleMainMenu}>Main Menu</button>
-            </div>
+            <button onClick={handleRestart}>Play Again</button>
+            <button onClick={handleMainMenu}>Main Menu</button>
           </div>
         )}
 
+        {/* Message Display */}
         {message && (
           <div className="message-display">
-            {message.split('\n').map((line: string, i: number) => (
-              <div key={i} className="message-line">{line}</div>
+            {message.split('\n').map((line, i) => (
+              <div key={i}>{line}</div>
             ))}
           </div>
         )}
