@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { useNavigate } from 'react-router-dom';
 import { getBackgroundImage } from '../utils/backgroundUtils';
-import { Location, SAN_FRANCISCO_LOCATIONS, Player, Enemy, Obstacle } from '../types/game';
+import { GameLocation, SAN_FRANCISCO_LOCATIONS, Player, Enemy } from '../types/game';
 import '../styles/Game.css';
 
 const LEVEL_DESCRIPTIONS = {
@@ -13,7 +13,7 @@ const LEVEL_DESCRIPTIONS = {
 
 const MultiPlayerGame: React.FC = () => {
   const { state, dispatch } = useGame();
-  const { playerA, playerB, enemies, obstacles, isInCombat, isGameOver, currentLocation, message } = state;
+  const { playerA, playerB, enemies, isInCombat, isGameOver, currentLocation, message } = state;
   const [isLoading, setIsLoading] = useState(true);
   const backgroundInterval = useRef<NodeJS.Timeout>();
   const navigate = useNavigate();
@@ -186,7 +186,7 @@ const MultiPlayerGame: React.FC = () => {
             top: `${playerA.position.y}px`
           }}
         >
-          🧑
+          <img src="./src/assets/images/player-a.png" alt="Player A" className="player-sprite" />
         </div>
 
         {/* Player B */}
@@ -197,7 +197,7 @@ const MultiPlayerGame: React.FC = () => {
             top: `${playerB.position.y}px`
           }}
         >
-          👨
+          <img src="./src/assets/images/player-b.png" alt="Player B" className="player-sprite" />
         </div>
 
         {enemies.map((enemy, index) => (
@@ -209,20 +209,7 @@ const MultiPlayerGame: React.FC = () => {
               top: `${enemy.position.y}px`
             }}
           >
-            {enemy.sprite}
-          </div>
-        ))}
-
-        {obstacles.map((obstacle, index) => (
-          <div
-            key={`obstacle-${index}`}
-            className="obstacle"
-            style={{
-              left: `${obstacle.position.x}px`,
-              top: `${obstacle.position.y}px`
-            }}
-          >
-            {obstacle.sprite}
+            <img src={enemy.sprite} alt={enemy.name} className="enemy-sprite" />
           </div>
         ))}
 

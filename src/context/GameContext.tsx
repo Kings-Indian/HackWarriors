@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { GameState, Enemy, Obstacle, SAN_FRANCISCO_LOCATIONS } from '../types/game';
+import { GameState, Enemy, SAN_FRANCISCO_LOCATIONS } from '../types/game';
 
 type GameAction =
   | { type: 'MOVE_PLAYER_A'; payload: { x: number; y: number } }
   | { type: 'MOVE_PLAYER_B'; payload: { x: number; y: number } }
   | { type: 'SPAWN_ENEMY'; payload: Enemy }
-  | { type: 'SPAWN_OBSTACLE'; payload: Obstacle }
   | { type: 'CHECK_COLLISION' }
   | { type: 'START_COMBAT'; payload: { enemy: Enemy; player: 'A' | 'B' } }
   | { type: 'END_COMBAT' }
@@ -20,7 +19,6 @@ const initialState: GameState = {
   isInCombat: false,
   isGameOver: false,
   enemies: [],
-  obstacles: [],
   playerA: {
     position: { x: 100, y: 100 },
     health: 100,
@@ -81,12 +79,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         enemies: [...state.enemies, action.payload]
-      };
-
-    case 'SPAWN_OBSTACLE':
-      return {
-        ...state,
-        obstacles: [...state.obstacles, action.payload]
       };
 
     case 'CHECK_COLLISION':
@@ -278,7 +270,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     console.log('Game State:', state);
   }, [state]);
 
-  // Spawn enemies and obstacles
+  // Spawn enemies
   useEffect(() => {
     console.log('Setting up spawn interval');
     const spawnInterval = setInterval(() => {
@@ -291,53 +283,27 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         // Check if we've reached the enemy limit
         if (state.enemies.length < MAX_ENEMIES) {
-          if (Math.random() < 0.7) { // 70% chance to spawn enemy
-            const randomEnemy = currentLocation.enemies[Math.floor(Math.random() * currentLocation.enemies.length)];
-            console.log('Spawning enemy:', randomEnemy);
-            
-            dispatch({
-              type: 'SPAWN_ENEMY',
-              payload: {
-                ...randomEnemy,
-                position: {
-                  x: Math.random() * 800,
-                  y: Math.random() * 600
-                }
+          const randomEnemy = currentLocation.enemies[Math.floor(Math.random() * currentLocation.enemies.length)];
+          console.log('Spawning enemy:', randomEnemy);
+          
+          dispatch({
+            type: 'SPAWN_ENEMY',
+            payload: {
+              ...randomEnemy,
+              position: {
+                x: Math.random() * 800,
+                y: Math.random() * 600
               }
-            });
-          } else { // 30% chance to spawn obstacle
-            const randomObstacle = currentLocation.obstacles[Math.floor(Math.random() * currentLocation.obstacles.length)];
-            console.log('Spawning obstacle:', randomObstacle);
-            
-            dispatch({
-              type: 'SPAWN_OBSTACLE',
-              payload: {
-                ...randomObstacle,
-                position: {
-                  x: Math.random() * 800,
-                  y: Math.random() * 600
-                }
-              }
-            });
-          }
+            }
+          });
         } else {
           console.log('Enemy spawn limit reached!');
         }
       }
-    }, 2000);
+    }, 3000);
 
-    const collisionInterval = setInterval(() => {
-      if (!state.isInCombat && !state.isGameOver) {
-        dispatch({ type: 'CHECK_COLLISION' });
-      }
-    }, 100);
-
-    return () => {
-      console.log('Cleaning up intervals');
-      clearInterval(spawnInterval);
-      clearInterval(collisionInterval);
-    };
-  }, [state.isInCombat, state.isGameOver, state.currentLocation, state.enemies.length]);
+    return () => clearInterval(spawnInterval);
+  }, [state.isInCombat, state.isGameOver, state.enemies.length, state.currentLocation]);
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>

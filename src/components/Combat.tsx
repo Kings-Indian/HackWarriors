@@ -1,5 +1,6 @@
 import React from 'react';
 import { Player, Enemy } from '../types/game';
+import './Combat.css';
 
 interface CombatProps {
   player: Player;
@@ -14,7 +15,9 @@ const Combat: React.FC<CombatProps> = ({ player, enemy, onAttack, onDefend, onRu
     <div className="combat-screen">
       <div className="combat-stats">
         <div className="combatant">
-          <div className="combatant-sprite">🧼</div>
+          <div className="combatant-sprite">
+            <img src="./src/assets/images/player.png" alt="Player" className="sprite-image" />
+          </div>
           <div className="combatant-info">
             <div className="combatant-name">Player</div>
             <div>Health: {player.health}</div>
@@ -23,9 +26,11 @@ const Combat: React.FC<CombatProps> = ({ player, enemy, onAttack, onDefend, onRu
           </div>
         </div>
         <div className="combatant">
-          <div className="combatant-sprite">{enemy.sprite}</div>
+          <div className="combatant-sprite">
+            <img src={enemy.sprite} alt={enemy.name} className="sprite-image" />
+          </div>
           <div className="combatant-info">
-            <div className="combatant-name">Enemy</div>
+            <div className="combatant-name">{enemy.name}</div>
             <div>Health: {enemy.health}</div>
             <div>Attack: {enemy.attack}</div>
             <div>Defense: {enemy.defense}</div>

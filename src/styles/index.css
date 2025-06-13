@@ -52,48 +52,30 @@ button:focus-visible {
 }
 
 .game-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  padding: 20px;
-}
-
-.game-area {
   position: relative;
   width: 800px;
   height: 600px;
-  border: 2px solid #333;
+  margin: 0 auto;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
   overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #1a1a1a;
 }
 
+/* Player styles */
 .player {
   position: absolute;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
+  color: white;
   z-index: 2;
-}
-
-.obstacle {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  z-index: 1;
-}
-
-.obstacle.enemy {
-  cursor: pointer;
 }
 
 .game-stats {
@@ -147,17 +129,18 @@ button:focus-visible {
 }
 
 .combat-screen {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  padding: 2rem;
+  z-index: 30;
 }
 
 .combat-stats {
@@ -217,44 +200,6 @@ button:focus-visible {
 .combat-actions button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
-
-/* Game container styles */
-.game-container {
-  position: relative;
-  width: 800px;
-  height: 600px;
-  margin: 0 auto;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  background-color: #1a1a1a;
-}
-
-/* Player styles */
-.player {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  background-color: var(--primary-color);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  color: white;
-  z-index: 2;
-}
-
-/* Obstacle styles */
-.obstacle {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  background-color: var(--danger-color);
-  border-radius: 4px;
-  z-index: 1;
 }
 
 /* Combat screen styles */

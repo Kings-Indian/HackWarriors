@@ -203,7 +203,7 @@ const Game: React.FC = () => {
               transition: 'all 0.1s ease-in-out'
             }}
           >
-            👤
+            <img src="./src/assets/images/player-a.png" alt="Player A" className="player-sprite" />
           </div>
 
           {/* Player B */}
@@ -224,13 +224,14 @@ const Game: React.FC = () => {
               transition: 'all 0.1s ease-in-out'
             }}
           >
-            👤
+            <img src="./src/assets/images/player-b.png" alt="Player B" className="player-sprite" />
           </div>
 
           {/* Enemies */}
           {state.enemies.map((enemy, index) => (
             <div
               key={`enemy-${index}`}
+              className="enemy"
               style={{
                 position: 'absolute',
                 left: enemy.position.x,
@@ -246,30 +247,7 @@ const Game: React.FC = () => {
                 transition: 'all 0.1s ease-in-out'
               }}
             >
-              {enemy.sprite}
-            </div>
-          ))}
-
-          {/* Obstacles */}
-          {state.obstacles.map((obstacle, index) => (
-            <div
-              key={`obstacle-${index}`}
-              style={{
-                position: 'absolute',
-                left: obstacle.position.x,
-                top: obstacle.position.y,
-                width: '50px',
-                height: '50px',
-                backgroundColor: 'rgba(255, 165, 0, 0.8)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '24px',
-                transition: 'all 0.1s ease-in-out'
-              }}
-            >
-              {obstacle.sprite}
+              <img src={enemy.sprite} alt={enemy.name} className="enemy-sprite" />
             </div>
           ))}
         </div>

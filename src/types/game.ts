@@ -1,14 +1,9 @@
-import { locationImages } from '../assets/locations';
+import { ENEMY_IMAGES } from '../assets/images/Enemies';
+import { locationImages } from '../assets/images/locations/locations';
 
 export interface Position {
   x: number;
   y: number;
-}
-
-export interface GameObject {
-  type: 'enemy' | 'obstacle';
-  position: Position;
-  sprite: string;
 }
 
 export interface Enemy {
@@ -17,12 +12,6 @@ export interface Enemy {
   attack: number;
   defense: number;
   speed: number;
-  sprite: string;
-  position: Position;
-}
-
-export interface Obstacle {
-  name: string;
   sprite: string;
   position: Position;
 }
@@ -40,11 +29,10 @@ export interface Player {
   isDefending: boolean;
 }
 
-export interface Location {
+export interface GameLocation {
   name: string;
   background: string;
   enemies: Enemy[];
-  obstacles: Obstacle[];
 }
 
 export interface GameState {
@@ -52,84 +40,158 @@ export interface GameState {
   isInCombat: boolean;
   isGameOver: boolean;
   enemies: Enemy[];
-  obstacles: Obstacle[];
   playerA: Player;
   playerB: Player;
   activePlayer: 'A' | 'B' | null;
   message: string;
 }
 
-export const SAN_FRANCISCO_LOCATIONS: Location[] = [
+export const SAN_FRANCISCO_LOCATIONS: GameLocation[] = [
   {
-    name: "Golden Gate Park",
-    background: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29",
+    name: "Chinatown",
+    background: locationImages.chinatown,
     enemies: [
       {
-        name: "Raccoon",
-        health: 50,
-        attack: 5,
-        defense: 2,
-        speed: 3,
-        sprite: "🦝",
-        position: { x: 0, y: 0 }
-      },
-      {
-        name: "Squirrel",
-        health: 30,
-        attack: 3,
-        defense: 1,
+        name: "Matt",
+        health: 60,
+        attack: 6,
+        defense: 3,
         speed: 2,
-        sprite: "🐿️",
-        position: { x: 0, y: 0 }
-      }
-    ],
-    obstacles: [
-      {
-        name: "Tree",
-        sprite: "🌳",
-        position: { x: 0, y: 0 }
-      },
-      {
-        name: "Bench",
-        sprite: "🪑",
+        sprite: ENEMY_IMAGES.Matt,
         position: { x: 0, y: 0 }
       }
     ]
   },
   {
     name: "Fisherman's Wharf",
-    background: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29",
+    background: locationImages['fishermans-wharf'],
     enemies: [
       {
-        name: "Seagull",
+        name: "Bathtub",
+        health: 50,
+        attack: 5,
+        defense: 2,
+        speed: 3,
+        sprite: ENEMY_IMAGES.Bathtub,
+        position: { x: 0, y: 0 }
+      },
+      {
+        name: "Toothbrush",
+        health: 30,
+        attack: 3,
+        defense: 1,
+        speed: 2,
+        sprite: ENEMY_IMAGES.Toothbrush,
+        position: { x: 0, y: 0 }
+      },
+      {
+        name: "Deo",
         health: 40,
         attack: 4,
         defense: 1,
         speed: 4,
-        sprite: "🦅",
-        position: { x: 0, y: 0 }
-      },
-      {
-        name: "Crab",
-        health: 60,
-        attack: 6,
-        defense: 3,
-        speed: 2,
-        sprite: "🦀",
+        sprite: ENEMY_IMAGES.Deo,
         position: { x: 0, y: 0 }
       }
-    ],
-    obstacles: [
+    ]
+  },
+  {
+    name: "Golden Gate Park",
+    background: locationImages['golden-gate-park'],
+    enemies: [
       {
-        name: "Fishing Net",
-        sprite: "🎣",
+        name: "Bathtub",
+        health: 50,
+        attack: 5,
+        defense: 2,
+        speed: 3,
+        sprite: ENEMY_IMAGES.Bathtub,
         position: { x: 0, y: 0 }
       },
       {
-        name: "Boat",
-        sprite: "⛵",
+        name: "Toothbrush",
+        health: 30,
+        attack: 3,
+        defense: 1,
+        speed: 2,
+        sprite: ENEMY_IMAGES.Toothbrush,
+        position: { x: 0, y: 0 }
+      },
+      {
+        name: "Deo",
+        health: 40,
+        attack: 4,
+        defense: 1,
+        speed: 4,
+        sprite: ENEMY_IMAGES.Deo,
+        position: { x: 0, y: 0 }
+      }
+    ]
+  },
+  {
+    name: "Haight Ashbury",
+    background: locationImages['haight-ashbury'],
+    enemies: [
+      {
+        name: "Bathtub",
+        health: 50,
+        attack: 5,
+        defense: 2,
+        speed: 3,
+        sprite: ENEMY_IMAGES.Bathtub,
+        position: { x: 0, y: 0 }
+      },
+      {
+        name: "Toothbrush",
+        health: 30,
+        attack: 3,
+        defense: 1,
+        speed: 2,
+        sprite: ENEMY_IMAGES.Toothbrush,
+        position: { x: 0, y: 0 }
+      },
+      {
+        name: "Deo",
+        health: 40,
+        attack: 4,
+        defense: 1,
+        speed: 4,
+        sprite: ENEMY_IMAGES.Deo,
+        position: { x: 0, y: 0 }
+      }
+    ]
+  },
+  {
+    name: "Pier 39",
+    background: locationImages['pier-39'],
+    enemies: [
+      {
+        name: "Bathtub",
+        health: 50,
+        attack: 5,
+        defense: 2,
+        speed: 3,
+        sprite: ENEMY_IMAGES.Bathtub,
+        position: { x: 0, y: 0 }
+      },
+      {
+        name: "Toothbrush",
+        health: 30,
+        attack: 3,
+        defense: 1,
+        speed: 2,
+        sprite: ENEMY_IMAGES.Toothbrush,
+        position: { x: 0, y: 0 }
+      },
+      {
+        name: "Deo",
+        health: 40,
+        attack: 4,
+        defense: 1,
+        speed: 4,
+        sprite: ENEMY_IMAGES.Deo,
         position: { x: 0, y: 0 }
       }
     ]
   }
-]; 
+];

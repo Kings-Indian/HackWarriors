@@ -1,9 +1,9 @@
-import type { Location } from '../types/game';
-import fishermansWharf from './images/fishermans-wharf.jpg';
-import pier39 from './images/pier-39.jpg';
-import chinatown from './images/chinatown.jpg';
-import goldenGatePark from './images/golden-gate-park.jpg';
-import haightAshbury from './images/haight-ashbury.jpg';
+import type { GameLocation } from '../../../types/game';
+import fishermansWharf from './fishermans-wharf.jpg';
+import pier39 from './pier-39.jpg';
+import chinatown from './chinatown.jpg';
+import goldenGatePark from './golden-gate-park.jpg';
+import haightAshbury from './haight-ashbury.jpg';
 
 type LocationKey = 'fishermans-wharf' | 'pier-39' | 'chinatown' | 'golden-gate-park' | 'haight-ashbury';
 
